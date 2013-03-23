@@ -8,7 +8,9 @@ package com.augustorodriguez.maven.plugin.core;
  * To change this template use File | Settings | File Templates.
  */
 public class PropertyValidator {
-    public void verify() {
-        //To change body of created methods use File | Settings | File Templates.
+    public PropertyValidationResult verify(PropertyGroup propertyGroup) {
+        PropertyValidationResult result = new PropertyValidationResult();
+
+        return propertyGroup.validate();
     }
 }

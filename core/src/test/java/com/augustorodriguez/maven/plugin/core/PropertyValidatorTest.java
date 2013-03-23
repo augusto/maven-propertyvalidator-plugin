@@ -1,6 +1,16 @@
 package com.augustorodriguez.maven.plugin.core;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.io.File;
+import java.net.URL;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Created with IntelliJ IDEA.
@@ -11,12 +21,47 @@ import org.junit.Test;
  */
 public class PropertyValidatorTest {
 
-    @Test
-    public void can_validate_an_empty_set_of_files() {
-        PropertyValidator propertyValidator = new PropertyValidator();
+    private static String testPropertiesBaseFolder;
 
-        propertyValidator.verify();
+    @BeforeClass
+    public static void setup() {
+        URL resource = PropertyValidatorTest.class.getClassLoader().getResource("testproperties");
+
+        testPropertiesBaseFolder = resource.getFile();
     }
 
+    @Test
+    public void can_validate_one_empty_property_group() {
+        PropertyValidator propertyValidator = new PropertyValidator();
+        PropertyGroup propertyGroup = new PropertyGroup();
 
+
+        PropertyValidationResult result = propertyValidator.verify(propertyGroup);
+        assertThat(result.isSuccess(), is(true));
+    }
+
+    @Test
+    public void can_validate_one_property_group_with_two_empty_property_files() {
+        PropertyValidator propertyValidator = new PropertyValidator();
+        PropertyGroup propertyGroup = new PropertyGroup();
+
+        propertyGroup.addFile(testPropertiesBaseFolder+"/empty.properties");
+        propertyGroup.addFile(testPropertiesBaseFolder+"/empty.properties");
+
+        PropertyValidationResult result = propertyValidator.verify(propertyGroup);
+        System.out.println(result);
+        assertThat(result.isSuccess(), is(true));
+    }
+
+    @Test
+    public void can_validate_one_property_group_with_two_different_property_files() {
+        PropertyValidator propertyValidator = new PropertyValidator();
+        PropertyGroup propertyGroup = new PropertyGroup();
+        propertyGroup.addFile(testPropertiesBaseFolder+"/one.properties");
+        propertyGroup.addFile(testPropertiesBaseFolder+"/empty.properties");
+
+        PropertyValidationResult result = propertyValidator.verify(propertyGroup);
+        assertThat(result.isSuccess(), is(false));
+        assertThat(result.getErrors().size(), equalTo(1));
+    }
 }
