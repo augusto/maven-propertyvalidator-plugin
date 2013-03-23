@@ -15,64 +15,42 @@ import java.util.*;
  */
 public class PropertyGroup {
 
-    private List<String> filePaths = new ArrayList<String>();
+    private List<PropertyFile> propertyFiles = new ArrayList<PropertyFile>();
+    private boolean errorOnEmptyProperty = false;
+    private static final String EMPTY_STRING = "";
 
-    public void addFile(String filePath) {
-        filePaths.add(filePath);
+    public void addFile(String filePath) throws PropertyValidatorException {
+        PropertyFile propertyFile = new PropertyFile(filePath);
+        propertyFiles.add(propertyFile);
     }
 
     public PropertyValidationResult validate() {
         PropertyValidationResult result = new PropertyValidationResult();
-        List<Properties> loadedProperties = new ArrayList<Properties>();
-        for(String filePath:filePaths) {
-            Properties properties = new Properties();
-            File propertyFile = new File(filePath);
-            if( propertyFile.exists() == false ) {
-                result.addError("File " + filePath + " does not exist");
-            } else if ( propertyFile.isFile() != true ) {
-                result.addError("File " + filePath + " does not exist");
-            } else if ( propertyFile.canRead() != true ) {
-                result.addError("File " + filePath + " cannot be read - check if you have permissions to read it");
-            } else {
 
-                try {
-                    FileInputStream inputStream = new FileInputStream(propertyFile);
-                    properties.load(inputStream);
-                    loadedProperties.add(properties);
-                } catch (FileNotFoundException e) {
-                    result.addError("Error reading file " + filePath + ": " + e.getMessage());
-                } catch (IOException e) {
-                    result.addError("Error reading file " + filePath + ": " + e.getMessage());
-                }
-            }
-        }
-
-        if( ! result.isSuccess() ){
-            return result;
-        }
-
-
-        for( Properties propertiesToTest : loadedProperties) {
+        for( PropertyFile propertiesToTest : propertyFiles) {
             Set<String> keySetToTest = (Set) propertiesToTest.keySet();
             for( String keyToTest : keySetToTest) {
-                for(Properties otherProperties : loadedProperties) {
+                for(PropertyFile otherProperties : propertyFiles) {
                     if( propertiesToTest != otherProperties) {
+                        if (! otherProperties.containsKey(keyToTest) ) {
+                            result.addError("Property '" + keyToTest + "' is present in " + propertiesToTest.getFileName() + ", but it's present in " + otherProperties.getFileName());
+                        }
 
-                        if (! otherProperties.contains(keyToTest) ) {
-                            result.addError("one property is missing in one file!");
+                        if( errorOnEmptyProperty) {
+                            String valueToTest = propertiesToTest.get(keyToTest).trim();
+                            if(valueToTest.equals(EMPTY_STRING)) {
+                                result.addError("Property '" + keyToTest + "' is EMPTY in " + propertiesToTest.getFileName());
+                            }
                         }
                     }
-
-
                 }
             }
         }
 
-
-
-
-
-
         return result;
+    }
+
+    public void setErrorOnEmptyProperty(boolean errorOnEmptyProperty) {
+        this.errorOnEmptyProperty = errorOnEmptyProperty;
     }
 }
